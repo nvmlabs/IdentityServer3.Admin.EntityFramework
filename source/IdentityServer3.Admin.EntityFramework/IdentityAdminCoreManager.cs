@@ -15,7 +15,6 @@
  */
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data.Entity;
 using System.Data.SqlClient;
 using System.Linq;
@@ -88,8 +87,6 @@ namespace IdentityServer3.Admin.EntityFramework
                 cfg.CreateMap<ScopeSecretValue, ScopeSecret>();
                 cfg.CreateMap<IdentityScope, Scope>();
                 cfg.CreateMap<Scope, IdentityScope>();
-                cfg.CreateMap<DateTime?, DateTimeOffset?>().ConvertUsing<NullableDateTimeOffsetConverter>();
-                cfg.CreateMap<DateTimeOffset?, DateTime?>().ConvertUsing<NullableOffsetDateTimeConverter>();
             });
             _clientMapper = clientConfig.CreateMapper();
         }
@@ -504,7 +501,6 @@ namespace IdentityServer3.Admin.EntityFramework
                             existingSecret.Description = description;
                             if (expiration.HasValue)
                             {
-                                //Save as new DateTimeOffset(expiration.Value)
                                 existingSecret.Expiration = expiration.Value;
                             }
                             await db.SaveChangesAsync();
@@ -1387,47 +1383,4 @@ namespace IdentityServer3.Admin.EntityFramework
 
         #endregion
     }
-   
-    public class NullableOffsetDateTimeConverter : ITypeConverter<DateTimeOffset?, DateTime?>
-    {
-        /// <summary>
-        /// Converts data from DateTime to DateTimeOffset
-        /// </summary>
-        /// <param name="source"></param>
-        /// <param name="destination"></param>
-        /// <param name="context"></param>
-        /// <returns></returns>
-        public DateTime? Convert(DateTimeOffset? source, DateTime? destination, ResolutionContext context)
-        {
-            if (source.HasValue)
-                if (source.Value.Offset.Equals(TimeSpan.Zero))
-                    return source.Value.UtcDateTime;
-                else if (source.Value.Offset.Equals(TimeZoneInfo.Local.GetUtcOffset(source.Value.DateTime)))
-                    return DateTime.SpecifyKind(source.Value.DateTime, DateTimeKind.Local);
-                else
-                    return source.Value.DateTime;
-            else
-                return null;
-        }
-    }
-
-    public class NullableDateTimeOffsetConverter : ITypeConverter<System.DateTime?, System.DateTimeOffset?>
-    {
-        /// <summary>
-        /// Converts data from DateTime to DateTimeOffset
-        /// </summary>
-        /// <param name="source"></param>
-        /// <param name="destination"></param>
-        /// <param name="context"></param>
-        /// <returns></returns>
-        public DateTimeOffset? Convert(DateTime? source, DateTimeOffset? destination, ResolutionContext context)
-        {
-            if (source.HasValue)
-                return source.Value;
-            else
-                return null;
-        }
-    }
-
-
 }
